@@ -2,7 +2,7 @@
 
 # 🎬 Laboratorio 09 — Desarrollo de Aplicaciones Web Avanzado
 
-### Introducción a Next.js — Galería de Películas y Series (OMDb API)
+### Introducción a Next.js — CSR, SSR y consumo de APIs externas
 
 ![Next.js](https://img.shields.io/badge/Next.js-16.4.2-000000?style=for-the-badge&logo=next.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
@@ -20,9 +20,9 @@
 - [Descripción general](#-descripción-general)
 - [Estructura del proyecto](#-estructura-del-proyecto)
 - [Configuración](#-configuración)
-- [Página Principal — SSR](#-página-principal--ssr)
-- [Búsqueda interactiva — CSR](#-búsqueda-interactiva--csr)
-- [Detalle de película/serie](#-detalle-de-películaserie)
+- [Ejercicio 1.1 — PokeApp: CSR vs SSR](#-ejercicio-11--pokeapp-csr-vs-ssr)
+- [Ejercicio 2.1 — Dashboard Híbrido de Clima](#-ejercicio-21--dashboard-híbrido-de-clima)
+- [Actividad Integradora — Galería de Películas y Series](#-actividad-integradora--galería-de-películas-y-series)
 - [Justificación SSR vs CSR](#-justificación-ssr-vs-csr)
 - [Cómo ejecutar el proyecto](#-cómo-ejecutar-el-proyecto)
 - [Stack técnico](#-stack-técnico)
@@ -32,7 +32,7 @@
 
 ## 📌 Descripción general
 
-Aplicación construida con **Next.js (App Router)** que combina las dos estrategias de renderizado del framework — **SSR** (Server-Side Rendering) y **CSR** (Client-Side Rendering) — consumiendo la API pública de **OMDb** para mostrar una galería de películas y series, con búsqueda en tiempo real y vista de detalle.
+Proyecto construido con **Next.js (App Router)** que recorre, de menor a mayor complejidad, las dos estrategias de renderizado del framework — **SSR** (Server-Side Rendering) y **CSR** (Client-Side Rendering) — primero en ejercicios guiados aislados (PokéAPI, Open-Meteo) y luego en una actividad integradora que combina ambas en una sola aplicación (**OMDb API**): una galería de películas y series con búsqueda en tiempo real.
 
 ---
 
@@ -41,22 +41,29 @@ Aplicación construida con **Next.js (App Router)** que combina las dos estrateg
 ```
 my-first-project/
 ├── app/
-│   ├── page.tsx                  # Home (SSR) — lista de populares
+│   ├── pokemon-csr/
+│   │   └── page.tsx                # Ejercicio 1.1 — Pokémon vía CSR
+│   ├── pokemon-ssr/
+│   │   └── page.tsx                # Ejercicio 1.1 — Pokémon vía SSR
+│   ├── weather/
+│   │   ├── page.tsx                # Ejercicio 2.1 — Dashboard (SSR)
+│   │   └── ClientWeatherWidget.tsx  # Ejercicio 2.1 — Widget interactivo (CSR)
+│   ├── page.tsx                    # Actividad Integradora — Home (SSR)
 │   ├── search/
-│   │   └── page.tsx               # Búsqueda (CSR)
+│   │   └── page.tsx                 # Actividad Integradora — Búsqueda (CSR)
 │   ├── layout.tsx
 │   └── globals.css
 │
 ├── components/
-│   └── MovieModal.tsx             # Modal de detalle (reutilizable)
+│   └── MovieModal.tsx              # Modal de detalle (reutilizable)
 │
 ├── lib/
-│   └── omdb.ts                    # Funciones centralizadas de consumo a OMDb
+│   └── omdb.ts                     # Funciones centralizadas de consumo a OMDb
 │
 ├── types/
-│   └── movie.ts                   # Interfaces TypeScript (OMDb)
+│   └── movie.ts                    # Interfaces TypeScript (OMDb)
 │
-├── .env.local                     # No se sube (API key de OMDb)
+├── .env.local                      # No se sube (API key de OMDb)
 └── next.config.ts
 ```
 
@@ -82,19 +89,36 @@ npm run dev
 
 ---
 
-## 🏠 Página Principal — SSR
+## 🐾 Ejercicio 1.1 — PokeApp: CSR vs SSR
+
+Dos páginas visualmente idénticas que renderizan un Pokémon aleatorio desde PokéAPI, cada una con una estrategia distinta, para comparar su comportamiento en la pestaña Network del navegador:
+
+| Página | Ruta | Estrategia |
+|---|---|---|
+| Pokémon CSR | `/pokemon-csr` | `'use client'` + `useState`/`useEffect` — el dato se pide **después** de montar el componente en el navegador |
+| Pokémon SSR | `/pokemon-ssr` | Server Component `async` — el dato se pide **en el servidor**, antes de enviar el HTML |
+
+---
+
+## 🌤️ Ejercicio 2.1 — Dashboard Híbrido de Clima
+
+Combina ambas estrategias en una misma página (`/weather`): un Server Component (SSR) para el contenido base, y un componente cliente embebido (`ClientWeatherWidget.tsx`, con `'use client'`) que permite elegir entre 4 ciudades (Tokyo, New York, London, Sydney) y consulta el clima actual en vivo contra la API de **Open-Meteo**, sin recargar la página.
+
+---
+
+## 🎬 Actividad Integradora — Galería de Películas y Series
+
+Aplicación completa que aplica lo practicado en los ejercicios anteriores, consumiendo la API de **OMDb**.
+
+### Home — SSR
 
 `app/page.tsx` es un **Server Component asíncrono**: pide el detalle de una lista curada de 8 IDs de OMDb mediante `Promise.all` (en paralelo) y renderiza la grilla completa en el servidor, antes de enviar el HTML al navegador.
 
----
-
-## 🔍 Búsqueda interactiva — CSR
+### Búsqueda interactiva — CSR
 
 `app/search/page.tsx` usa `'use client'`, `useState` y `useEffect` con **debounce** (500ms): la búsqueda se dispara automáticamente mientras el usuario escribe, sin recargar la página y sin disparar una petición por cada tecla.
 
----
-
-## 🎞️ Detalle de película/serie
+### Detalle de película/serie
 
 Al hacer clic en un resultado de la búsqueda, `components/MovieModal.tsx` pide el detalle completo (`plot=full`) por `imdbID` y lo muestra en una ventana modal superpuesta, sin navegar a otra URL.
 
